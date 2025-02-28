@@ -11,7 +11,6 @@ import ui.util.Text;
 import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.*;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -19,6 +18,7 @@ import static ui.util.ANSI.*;
 
 public class LivrariaCLI {
 
+    public static final String CART_MARK = "* ";
     private static final Set<String> EXIT_SEQUENCES = Set.of("q", "quit", "exit");
     public static final String GO_BACK_OPTION = ".";
     private static final String GO_BACK = "[.] Voltar";
@@ -37,10 +37,11 @@ public class LivrariaCLI {
     private final boolean ansi;
 
     private final Map<String, Supplier<Boolean>> bookOptions;
-    private final Map<String, Function<Livro, ?>> cartOptions;
+    private final Map<String, Supplier<Boolean>> cartOptions;
 
     private final Integer NO_SELECTION = -1;
     private Integer bookSelectionIndex;
+    private Integer cartSelectionIndex;
 
     public LivrariaCLI(InputStream in, PrintStream out) {
         this(in, out, true, new Carrinho());
@@ -54,17 +55,84 @@ public class LivrariaCLI {
         this.livraria = new ArrayList<>();
         this.carrinho = carrinho;
         this.bookSelectionIndex = NO_SELECTION;
+        this.cartSelectionIndex = NO_SELECTION;
         this.bookOptions = new LinkedHashMap<>();
         this.bookOptions.put("[a] Novo livro", this::addBook);
         this.bookOptions.put("[r] Remove livro", this::removeBook);
         this.bookOptions.put("[q] Fecha o programa", this::quit);
         this.bookOptions.put("[j] Seleciona próximo livro", this::nextBook);
         this.bookOptions.put("[k] Seleciona livro anterior", this::prevBook);
+        this.bookOptions.put("[c] Adiciona livro ao carrinho", this::addToCart);
+        this.bookOptions.put("[d] Remove livro do carrinho", this::removeFromCart);
+        this.bookOptions.put("[>] Ver carrinho", this::switchToCart);
 
         this.cartOptions = new LinkedHashMap<>();
-        this.cartOptions.put("[r] Remove livro do carrinho", carrinho::removeBook);
+        this.cartOptions.put("[r] Remove livro do carrinho", this::removeCartItem);
+        this.cartOptions.put("[j] Seleciona próximo item", this::nextCartItem);
+        this.cartOptions.put("[k] Seleciona item anterior", this::prevCartItem);
+        this.cartOptions.put("[l] Limpar carrinho", this::clearCart);
+        this.cartOptions.put(GO_BACK, this::goBack);
 
         this.screens.push(setupBookScreen());
+    }
+
+    private Boolean switchToCart() {
+        String header = Text.banner("Carrinho", BANNER_SIZE, BANNER_OUTLINE);
+        Set<String> cartOptions = this.cartOptions.keySet();
+
+        Supplier<String> content = () -> {
+            StringBuilder text = new StringBuilder();
+            text.append(carrinho.getBooks().stream()
+                    .map(livro ->
+                            getSelectedCartItem().filter(livro::equals)
+                                    .map(selected -> color(selected.toString(), BG_DARK_GRAY, BOLD))
+                                    .orElseGet(livro::toString)
+                    )
+                    .collect(Collectors.joining("\n")));
+            text.append(String.format("\n\nFrete total: %.2f\n", carrinho.calcularFreteTotal()));
+            text.append(String.format("Subtotal: %.2f\n", carrinho.calcularSubTotal()));
+            text.append(String.format("Total: %.2f\n", carrinho.calcularTotal()));
+            return text.toString();
+        };
+        this.screens.push(new Screen(header, content, cartOptions, ""));
+        return true;
+    }
+
+    private Boolean removeFromCart() {
+        boolean notPresent = getSelectedBook().filter(this.carrinho::removeBook).isEmpty();
+        if (notPresent) {
+            getCurrentScreen().setMessage("O livro ja não estava carrinho");
+        }
+        getCurrentScreen().setMessage("Livro removido do carrinho com sucesso");
+        this.cartSelectionIndex = select(carrinho.getBooks().size() - 1, carrinho.getBooks());
+        return true;
+    }
+
+    private Boolean addToCart() {
+        boolean notPresent = getSelectedBook().filter(this.carrinho::addBook).isEmpty();
+        if (notPresent) {
+            getCurrentScreen().setMessage("O livro ja esta no carrinho");
+        }
+        if (this.carrinho.getBooks().size() == 1)
+            this.cartSelectionIndex = select(0, this.carrinho.getBooks());
+        getCurrentScreen().setMessage("Livro adicionado ao carrinho com sucesso");
+        return true;
+    }
+
+    private Boolean removeCartItem() {
+        if (getSelectedCartItem().isEmpty())
+            return false;
+
+        getSelectedCartItem().ifPresent(carrinho::removeBook);
+        this.cartSelectionIndex = select(this.cartSelectionIndex - 1, carrinho.getBooks());
+        getCurrentScreen().setMessage("Item removido com sucesso");
+        return true;
+    }
+
+    private Boolean clearCart() {
+        this.cartSelectionIndex = NO_SELECTION;
+        getCurrentScreen().setMessage("Carrinho esvaziado!");
+        return carrinho.clear();
     }
 
     private boolean addBook() {
@@ -104,7 +172,7 @@ public class LivrariaCLI {
             livraria.add(new EBook(title, author, isbn, price, sizeInMb));
         }
 
-        select(livraria.size() - 1);
+        this.bookSelectionIndex = select(livraria.size() - 1, livraria);
         getCurrentScreen().setMessage("Livro adicionado com sucesso!");
         return true;
     }
@@ -115,7 +183,8 @@ public class LivrariaCLI {
 
         String message = selectedBook.map((book) -> {
                     livraria.remove(book);
-                    select(livraria.size() - 1);
+                    carrinho.removeBook(book);
+                    this.bookSelectionIndex = select(livraria.size() - 1, livraria);
                     return "Livro removido com sucesso!";
                 })
                 .orElse("Nenhum livro selecionado");
@@ -128,36 +197,74 @@ public class LivrariaCLI {
         return true;
     }
 
+    private Boolean prevCartItem() {
+        this.cartSelectionIndex = prevSelection(carrinho.getBooks(), cartSelectionIndex);
+        if (cartSelectionIndex.equals(NO_SELECTION)) {
+            getCurrentScreen().setMessage("O carrinho esta vazio");
+            return false;
+        }
+
+        getCurrentScreen().setMessage("/\\");
+        return true;
+    }
+
+    private Boolean nextCartItem() {
+        this.cartSelectionIndex = nextSelection(carrinho.getBooks(), cartSelectionIndex);
+        if (cartSelectionIndex.equals(NO_SELECTION)) {
+            getCurrentScreen().setMessage("O carrinho esta vazio");
+            return false;
+        }
+
+        getCurrentScreen().setMessage("\\/");
+        return true;
+    }
+
     private Boolean prevBook() {
-        if (livraria.isEmpty()) {
-            select(NO_SELECTION);
+        this.bookSelectionIndex = prevSelection(livraria, bookSelectionIndex);
+        if (bookSelectionIndex.equals(NO_SELECTION)) {
             getCurrentScreen().setMessage("Lista de livros vazia!");
             return false;
         }
+
         getCurrentScreen().setMessage("/\\");
-        this.bookSelectionIndex = bookSelectionIndex - 1 < 0 ? livraria.size() - 1 : bookSelectionIndex - 1;
         return true;
     }
 
     private Boolean nextBook() {
-        if (livraria.isEmpty()) {
-            select(NO_SELECTION);
+        this.bookSelectionIndex = nextSelection(livraria, bookSelectionIndex);
+        if (bookSelectionIndex.equals(NO_SELECTION)) {
             getCurrentScreen().setMessage("Lista de livros vazia!");
             return false;
         }
+
         getCurrentScreen().setMessage("\\/");
-        this.bookSelectionIndex = bookSelectionIndex + 1 >= livraria.size() ? 0 : bookSelectionIndex + 1;
         return true;
+    }
+
+    private Integer nextSelection(List<Livro> list, Integer index) {
+        if (list.isEmpty())
+            return NO_SELECTION;
+        return index + 1 >= list.size() ? 0 : index + 1;
+    }
+
+    private int prevSelection(List<?> list, Integer index) {
+        if (list.isEmpty())
+            return NO_SELECTION;
+        return index - 1 < 0 ? list.size() - 1 : index - 1;
     }
 
     private Screen setupBookScreen() {
         String header = Text.banner("Books", BANNER_SIZE, BANNER_OUTLINE);
         Set<String> bookOptions = this.bookOptions.keySet();
         Supplier<String> content = () -> livraria.stream()
-                .map(livro ->
-                        getSelectedBook().filter(livro::equals)
-                                .map(selected -> color(selected.toString(), BG_DARK_GRAY, BOLD))
-                                .orElseGet(livro::toString)
+                .map(livro -> {
+                            String prefixCarrinho = carrinho.contains(livro) ? CART_MARK : "";
+                            return getSelectedBook().filter(livro::equals)
+                                    .map(selected -> {
+                                        return prefixCarrinho + color(selected.toString(), BG_DARK_GRAY, BOLD);
+                                    })
+                                    .orElse(prefixCarrinho + livro.toString());
+                        }
                 )
                 .collect(Collectors.joining("\n"));
         return new Screen(header, content, bookOptions, "");
@@ -272,7 +379,7 @@ public class LivrariaCLI {
             getCurrentScreen().setMessage("");
             return;
         }
-        ;
+
         this.screens.peek().getOptions().stream()
                 .filter(option -> {
                     final int open = option.indexOf('[') + 1;
@@ -283,20 +390,29 @@ public class LivrariaCLI {
                 .ifPresent(selected -> {
                     getCurrentScreen().setMessage("");
 
+                    Boolean success = false;
                     if (bookOptions.containsKey(selected)) {
-                        Boolean success = bookOptions.get(selected).get();
-                        String message = success ? "Operação realizada com sucesso!" : "Operação abortada.";
-                        if (getCurrentScreen().getMessage().isBlank())
-                            getCurrentScreen().setMessage(message);
+                        success = bookOptions.get(selected).get();
+                    } else if (cartOptions.containsKey(selected)) {
+                        success = cartOptions.get(selected).get();
                     }
-//                    } else if (cartOptions.containsKey(selected)) {
-//                        cartOptions.get(selected).apply();
-//                    }
+
+                    String message = success ? "Operação realizada com sucesso!" : "Operação abortada.";
+                    if (getCurrentScreen().getMessage().isBlank())
+                        getCurrentScreen().setMessage(message);
                 });
     }
 
     private Screen getCurrentScreen() {
         return screens.peek();
+    }
+
+    private Boolean goBack() {
+        if (screens.size() > 1) {
+            screens.pop();
+            return true;
+        }
+        return false;
     }
 
     private void printScreen() {
@@ -305,17 +421,22 @@ public class LivrariaCLI {
         out.print(this.screens.peek().refreshScreen());
     }
 
-    private void select(int index) {
-        if (isOutOfBounds(livraria, index)) {
-            this.bookSelectionIndex = NO_SELECTION;
-            return;
+    private int select(int index, List<?> list) {
+        if (isOutOfBounds(list, index)) {
+            return NO_SELECTION;
         }
 
-        this.bookSelectionIndex = index;
+        return index;
     }
 
     private boolean isOutOfBounds(Collection<?> collection, int index) {
         return index < 0 || index >= collection.size();
+    }
+
+    private Optional<Livro> getSelectedCartItem() {
+        if (isOutOfBounds(carrinho.getBooks(), this.cartSelectionIndex))
+            return Optional.empty();
+        return Optional.of(this.carrinho.getBooks().get(this.cartSelectionIndex));
     }
 
     private Optional<Livro> getSelectedBook() {
