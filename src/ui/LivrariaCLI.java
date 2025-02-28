@@ -15,13 +15,15 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static ui.util.ANSI.*;
+
 public class LivrariaCLI {
 
     private static final Set<String> EXIT_SEQUENCES = Set.of("q", "quit", "exit");
     public static final String GO_BACK_OPTION = ".";
     private static final String GO_BACK = "[.] Voltar";
 
-    private static final int BANNER_SIZE = 40;
+    private static final int BANNER_SIZE = 70;
     private static final String LINE_SEPARATOR = "-";
     private static final String BANNER_OUTLINE = "=";
 
@@ -51,6 +53,12 @@ public class LivrariaCLI {
         this.livraria = new ArrayList<>();
         this.carrinho = carrinho;
         this.bookSelectionIndex = NO_SELECTION;
+        livraria.add(new LivroFisico("Como fritar um hamburger", "Pudim", "57", 59.9, 0.43, 2.0));
+        livraria.add(new LivroFisico("Como cozinhar sem oleo", "Roberto seila", "34", 19.9, 0.83, 1.0));
+        livraria.add(new LivroFisico("Fiquei preso no freezer, e agora?", "Roberto seila", "24", 49.8, 2.1, 15.0));
+        livraria.add(new EBook("Como não ser frito", "Pudim", "72", 120.3, 2.1));
+        livraria.add(new EBook("Como cozinhar sem cozinha", "Roberto seila", "55", 69.9, 0.5));
+        livraria.add(new EBook("Como fritar um ovo", "Pudim", "48", 99.9, 1.1));
 
         this.bookOptions = new LinkedHashMap<>();
         this.bookOptions.put("[a] Novo livro", this::addBook);
@@ -160,7 +168,7 @@ public class LivrariaCLI {
         Supplier<String> content = () -> livraria.stream()
                 .map(livro ->
                         getSelectedBook().filter(livro::equals)
-                                .map(selected -> ANSI.colorize(selected.toString(), ANSI.BG_DARK_GRAY))
+                                .map(selected -> color(selected.toString(), BG_DARK_GRAY, BOLD))
                                 .orElseGet(livro::toString)
                 )
                 .collect(Collectors.joining("\n"));
@@ -184,6 +192,8 @@ public class LivrariaCLI {
         do {
             printScreen();
             line = scan.nextLine().trim();
+
+            if (line.isBlank()) getCurrentScreen().setMessage("A entrada não deve ser vazia");
         } while (!line.equals(GO_BACK_OPTION) && line.isBlank());
 
         this.screens.pop();
@@ -231,7 +241,8 @@ public class LivrariaCLI {
         if (line.isBlank()) {
             getCurrentScreen().setMessage("");
             return;
-        };
+        }
+        ;
         this.screens.peek().getOptions().stream()
                 .filter(option -> {
                     final int open = option.indexOf('[') + 1;

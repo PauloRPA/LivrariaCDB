@@ -1,6 +1,10 @@
 package model;
 
-public class EBook extends Livro{
+import ui.util.ANSI;
+
+import static ui.util.ANSI.*;
+
+public class EBook extends Livro {
 
     private final Double sizeInMb;
 
@@ -15,12 +19,9 @@ public class EBook extends Livro{
 
     @Override
     public String toString() {
-        return "EBook [" +
-                " title='" + title + '\'' +
-                ", author='" + author + '\'' +
-                ", price=" + price +
-                ", isbn='" + isbn + '\'' +
-                ", sizeInMb=" + sizeInMb +
-                ']';
+        String priceStr = color(String.format("R$%.2f", price), ANSI.GREEN);
+        String sizeInMbStr = color(String.format("%.2fMB", sizeInMb), ANSI.BRIGHT_RED);
+        return String.format("EBook  #%s - %s [Por: %s] [Preço: %s] [Size: %s]",
+                isbn, color(title, UNDERLINE), color(author, YELLOW), priceStr, sizeInMbStr);
     }
 }

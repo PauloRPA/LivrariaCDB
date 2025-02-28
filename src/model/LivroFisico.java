@@ -1,5 +1,9 @@
 package model;
 
+import ui.util.ANSI;
+
+import static ui.util.ANSI.*;
+
 public class LivroFisico extends Livro {
 
     protected final Double weight;
@@ -26,14 +30,11 @@ public class LivroFisico extends Livro {
 
     @Override
     public String toString() {
-        return "Livro Físico [" +
-                " title='" + title + '\'' +
-                ", author='" + author + '\'' +
-                ", price=" + price +
-                ", isbn='" + isbn + '\'' +
-                ", weight=" + weight +
-                ", freight=" + freight +
-                ']';
+        String priceStr = color(String.format("R$%.2f", price), GREEN),
+        freightStr = color(String.format("R$%.2f", freight), GREEN),
+        weightStr = color(String.format("%.2f", weight), BRIGHT_RED);
+        return String.format("Físico #%s - %s [Por: %s] [Preço: %s] [Frete: %s] [Peso: %s]",
+                isbn, color(title, ANSI.UNDERLINE), color(author, ANSI.YELLOW), priceStr, freightStr, weightStr);
     }
 
 }

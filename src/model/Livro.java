@@ -1,6 +1,11 @@
 package model;
 
+import ui.util.ANSI;
+
 import java.util.Objects;
+
+import static ui.util.ANSI.YELLOW;
+import static ui.util.ANSI.color;
 
 public class Livro {
 
@@ -50,11 +55,8 @@ public class Livro {
 
     @Override
     public String toString() {
-        return "Livro [" +
-                " title='" + title + '\'' +
-                ", author='" + author + '\'' +
-                ", price=" + price +
-                ", isbn='" + isbn + '\'' +
-                ']';
+        String priceStr = String.format("R$%.2f", price);
+        return String.format("#%s - %s [Por: %s] [Preço: %s]",
+                isbn, color(title, ANSI.UNDERLINE), color(author, YELLOW), priceStr);
     }
 }
