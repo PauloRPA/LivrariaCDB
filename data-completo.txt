@@ -1,0 +1,27 @@
+a,0,Como fritar um hamburger,Pudim,57,59.9,0.43,2.0
+a,0,Como cozinhar sem oleo,Roberto seila,34,19.9,0.83,1.0
+a,0,Fiquei preso no freezer,e agora?,Roberto seila,24,49.8,2.1,15.0
+a,1,Como não ser frito,Pudim,72,120.3,2.1
+a,1,Como cozinhar sem cozinha,Roberto seila,55,69.9,0.5
+a,1,Como fritar um ovo,Pudim,48,99.9,1.1
+
+a,0,Orgulho e Preconceito,Jane Austen,01,11.10,1.1,6
+a,0,1984,George Orwell,02,12.20,1.2,3
+a,0,Dom Quixote de la Mancha,Miguel de Cervantes,03,13.30,0.3,7
+a,0,O Pequeno Príncipe,Antoine de Saint-Exupéry,04,14.40,0.4,13.2
+a,0,Dom Casmurro,Machado de Assis,05,15.50,0.5,11.10
+a,0,Macunaíma,Mário de Andrade,06,16.60,0.6,13.32
+a,0,O Conde de Monte Cristo,Alexandre Dumas,07,17.70,1.7,15.54
+a,0,Um Estudo em Vermelho,Arthur Conan Doyle,08,18.80,0.8,17.76
+a,0,O Processo,Franz Kafka,09,19.90,1.9,10.00
+a,0,Cem Anos de Solidão,Gabriel García Márquez,10,11.00,0.1,11.51
+a,1,Vidas Secas,Graciliano Ramos,11,12.10,1.1
+a,1,Eu, Robô,Isaac Asimov,12,13.20,1.2
+a,1,O Senhor dos Anéis,J. R. R. Tolkien,13,14.30,0.3
+a,1,Guerra e Paz,Leo Tolstói,14,15.40,0.4
+a,1,Grande Sertão: Veredas,João Guimarães Rosa,15,16.50,0.5
+a,1,O Retrato de Dorian Gray,Oscar Wilde,16,17.60,0.6
+a,1,A Redoma de Vidro,Sylvia Plath,17,18.70,1.7
+a,1,A Hora da Estrela,Clarice Lispector,18,19.80,0.8
+a,1,Ensaio Sobre a Cegueira,José Saramago,19,20.90,1.9
+a,1,Maurice,E.M. Forster,20,22.00,0.1
