@@ -22,6 +22,7 @@ public class LivrariaCLI {
     private static final Set<String> EXIT_SEQUENCES = Set.of("q", "quit", "exit");
     public static final String GO_BACK_OPTION = ".";
     private static final String GO_BACK = "[.] Voltar";
+    public static final String DOUBLE_INPUT_REQUISITE = "[Double]";
 
     private static final int BANNER_SIZE = 70;
     private static final String LINE_SEPARATOR = "-";
@@ -53,13 +54,6 @@ public class LivrariaCLI {
         this.livraria = new ArrayList<>();
         this.carrinho = carrinho;
         this.bookSelectionIndex = NO_SELECTION;
-        livraria.add(new LivroFisico("Como fritar um hamburger", "Pudim", "57", 59.9, 0.43, 2.0));
-        livraria.add(new LivroFisico("Como cozinhar sem oleo", "Roberto seila", "34", 19.9, 0.83, 1.0));
-        livraria.add(new LivroFisico("Fiquei preso no freezer, e agora?", "Roberto seila", "24", 49.8, 2.1, 15.0));
-        livraria.add(new EBook("Como não ser frito", "Pudim", "72", 120.3, 2.1));
-        livraria.add(new EBook("Como cozinhar sem cozinha", "Roberto seila", "55", 69.9, 0.5));
-        livraria.add(new EBook("Como fritar um ovo", "Pudim", "48", 99.9, 1.1));
-
         this.bookOptions = new LinkedHashMap<>();
         this.bookOptions.put("[a] Novo livro", this::addBook);
         this.bookOptions.put("[r] Remove livro", this::removeBook);
@@ -68,58 +62,50 @@ public class LivrariaCLI {
         this.bookOptions.put("[k] Seleciona livro anterior", this::prevBook);
 
         this.cartOptions = new LinkedHashMap<>();
-        this.cartOptions.put("[a] Adiciona livro ao carrinho", carrinho::addBook);
         this.cartOptions.put("[r] Remove livro do carrinho", carrinho::removeBook);
 
         this.screens.push(setupBookScreen());
     }
 
     private boolean addBook() {
-        String LIVRO_FISICO = "LIVRO FISICO",
-                EBOOK = "EBOOK";
+        String LIVRO_FISICO = "LIVRO FISICO", EBOOK = "EBOOK";
         String selected = readInputOptions(List.of(LIVRO_FISICO, EBOOK));
-
         if (selected.isBlank())
             return false;
 
-        String title = readInputText("Insira o titulo para o novo livro");
-        if (title.isBlank()) return false;
+        List<String> inputMessages = new ArrayList<>();
+        inputMessages.add("Insira o titulo para o novo livro");
+        inputMessages.add("Insira o nome do autor");
+        inputMessages.add("Insira o isbn do livro");
+        inputMessages.add("Insira o valor do livro " + DOUBLE_INPUT_REQUISITE);
 
-        String author = readInputText("Insira o nome do autor");
-        if (author.isBlank()) return false;
-
-        String isbn = readInputText("Insira o isbn do livro");
-        if (isbn.isBlank()) return false;
-
-        String priceInput = readInputText("Insira o valor do livro");
-        if (priceInput.isBlank() || !isDouble(priceInput))
-            return false;
-
-        final double price = Double.parseDouble(priceInput);
         if (selected.equals(LIVRO_FISICO)) {
-            String weightInput = readInputText("Insira o peso do livro");
-            if (weightInput.isBlank() || !isDouble(weightInput))
-                return false;
-
-            String freightInput = readInputText("Insira o frete do livro");
-            if (freightInput.isBlank() || !isDouble(freightInput))
-                return false;
-
-            final double weight = Double.parseDouble(weightInput);
-            final double freight = Double.parseDouble(freightInput);
-            livraria.add(new LivroFisico(title, author, isbn, price, weight, freight));
-
+            inputMessages.add("Insira o peso do livro " + DOUBLE_INPUT_REQUISITE);
+            inputMessages.add("Insira o frete do livro " + DOUBLE_INPUT_REQUISITE);
         } else if (selected.equals(EBOOK)) {
-            String sizeInMbInput = readInputText("Insira o tamanho em MB do livro");
-            if (sizeInMbInput.isBlank() || !isDouble(sizeInMbInput))
-                return false;
+            inputMessages.add("Insira o tamanho em MB do livro " + DOUBLE_INPUT_REQUISITE);
+        }
 
-            final double sizeInMb = Double.parseDouble(sizeInMbInput);
+        List<String> userInput = readInputSequence(inputMessages);
+        if (userInput.isEmpty()) return false;
+
+        int index = 0;
+        String title = userInput.get(index++);
+        String author = userInput.get(index++);
+        String isbn = userInput.get(index++);
+        final double price = Double.parseDouble(userInput.get(index++));
+
+        if (selected.equals(LIVRO_FISICO)) {
+            final double weight = Double.parseDouble(userInput.get(index++));
+            final double freight = Double.parseDouble(userInput.get(index));
+            livraria.add(new LivroFisico(title, author, isbn, price, weight, freight));
+        } else if (selected.equals(EBOOK)) {
+            final double sizeInMb = Double.parseDouble(userInput.get(index));
             livraria.add(new EBook(title, author, isbn, price, sizeInMb));
         }
+
         select(livraria.size() - 1);
         getCurrentScreen().setMessage("Livro adicionado com sucesso!");
-
         return true;
     }
 
@@ -148,6 +134,7 @@ public class LivrariaCLI {
             getCurrentScreen().setMessage("Lista de livros vazia!");
             return false;
         }
+        getCurrentScreen().setMessage("/\\");
         this.bookSelectionIndex = bookSelectionIndex - 1 < 0 ? livraria.size() - 1 : bookSelectionIndex - 1;
         return true;
     }
@@ -158,6 +145,7 @@ public class LivrariaCLI {
             getCurrentScreen().setMessage("Lista de livros vazia!");
             return false;
         }
+        getCurrentScreen().setMessage("\\/");
         this.bookSelectionIndex = bookSelectionIndex + 1 >= livraria.size() ? 0 : bookSelectionIndex + 1;
         return true;
     }
@@ -184,10 +172,23 @@ public class LivrariaCLI {
         } while (!EXIT_SEQUENCES.contains(line) && !screens.isEmpty());
     }
 
-    private String readInputText(String title) {
-        String header = Text.banner(title, BANNER_SIZE, BANNER_OUTLINE);
-        this.screens.push(new Screen(header, List.of(GO_BACK), ""));
+    private String readInputDouble() {
+        String line = "";
+        do {
+            printScreen();
+            line = scan.nextLine().trim();
 
+            if (line.isBlank()) getCurrentScreen().setMessage("A entrada não deve ser vazia");
+            if (!isDouble(line)) getCurrentScreen().setMessage("A entrada deve ser um numero");
+        } while (!line.equals(GO_BACK_OPTION) && line.isBlank() || !isDouble(line));
+
+        if (line.equals(GO_BACK_OPTION))
+            return "";
+
+        return line;
+    }
+
+    private String readInputText() {
         String line = "";
         do {
             printScreen();
@@ -196,7 +197,6 @@ public class LivrariaCLI {
             if (line.isBlank()) getCurrentScreen().setMessage("A entrada não deve ser vazia");
         } while (!line.equals(GO_BACK_OPTION) && line.isBlank());
 
-        this.screens.pop();
         if (line.equals(GO_BACK_OPTION))
             return "";
 
@@ -225,6 +225,36 @@ public class LivrariaCLI {
             return "";
 
         return options.get(optionInputs.indexOf(line));
+    }
+
+    private List<String> readInputSequence(List<String> screenMessages) {
+        int step = 0;
+        Screen screenBeforeInput = this.screens.peek();
+        List<String> userInput = new ArrayList<>(screenMessages.size());
+        while (step >= 0 && step < screenMessages.size()) {
+            String header = Text.banner(screenMessages.get(step), BANNER_SIZE, BANNER_OUTLINE);
+            this.screens.push(new Screen(header, List.of(GO_BACK), ""));
+
+            String input = screenMessages.get(step).contains(DOUBLE_INPUT_REQUISITE) ? readInputDouble() : readInputText();
+            userInput.add(step, input);
+
+            if (userInput.get(step).isBlank()) {
+                step--;
+                this.screens.pop();
+                continue;
+            }
+            step++;
+        }
+
+        while (!this.screens.peek().equals(screenBeforeInput))
+            this.screens.pop();
+
+        if (step < 0) {
+            userInput.clear();
+            return userInput;
+        }
+
+        return userInput;
     }
 
     private List<String> extractOptionKeys(List<String> options) {
