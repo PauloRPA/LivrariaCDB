@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public class Screen {
+public class Menu {
 
     private String header;
     private Supplier<String> content;
@@ -16,11 +16,11 @@ public class Screen {
     private final StringBuilder screenCache;
     private int headerOffset;
 
-    public Screen(String header, List<String> options, String message) {
+    public Menu(String header, List<String> options, String message) {
         this(header, null, options, message);
     }
 
-    public Screen(String header, Supplier<String> content, Iterable<String> options, String message) {
+    public Menu(String header, Supplier<String> content, Iterable<String> options, String message) {
         this.header = Objects.requireNonNullElse(header, "");
         this.message = Objects.requireNonNullElse(message, "");
         this.content = Objects.requireNonNullElse(content, () -> "");
@@ -30,10 +30,10 @@ public class Screen {
         if (options != null)
             options.forEach(this.options::add);
 
-        buildScreen();
+        buildMenu();
     }
 
-    private void buildScreen() {
+    private void buildMenu() {
         screen.setLength(0);
         screen.append(header);
         screen.append(content.get()).append("\n\n");
@@ -54,7 +54,7 @@ public class Screen {
         return optionList.toString();
     }
 
-    public Screen refreshScreen() {
+    public Menu refreshMenu() {
         screen.setLength(0);
         screen.append(screenCache.toString());
         screen.insert(headerOffset, content.get()).append("\n");
@@ -80,17 +80,17 @@ public class Screen {
 
     public void setHeader(String header) {
         this.header = header;
-        buildScreen();
+        buildMenu();
     }
 
     public void setContent(Supplier<String> content) {
         this.content = content;
-        refreshScreen();
+        refreshMenu();
     }
 
     public void setMessage(String message) {
         this.message = message;
-        refreshScreen();
+        refreshMenu();
     }
 
     @Override
