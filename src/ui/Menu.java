@@ -1,4 +1,4 @@
-package ui.util;
+package ui;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,6 +76,12 @@ public class Menu {
 
     public String getMessage() {
         return message;
+    }
+
+    public void setOptions(Iterable<String> options) {
+        this.options.clear();
+        options.forEach(this.options::add);
+        buildMenu();
     }
 
     public void setHeader(String header) {

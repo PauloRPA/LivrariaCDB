@@ -7,7 +7,7 @@ import java.util.Objects;
 import static ui.util.ANSI.YELLOW;
 import static ui.util.ANSI.color;
 
-public class Livro {
+public abstract class Livro {
 
     protected final String title;
     protected final String author;

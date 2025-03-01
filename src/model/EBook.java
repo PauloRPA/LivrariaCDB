@@ -21,7 +21,7 @@ public class EBook extends Livro {
     public String toString() {
         String priceStr = color(String.format("R$%.2f", price), ANSI.GREEN);
         String sizeInMbStr = color(String.format("%.2fMB", sizeInMb), ANSI.BRIGHT_RED);
-        return String.format("EBook  #%s - %s [Por: %s] [Preço: %s] [Size: %s]",
+        return String.format("EBook  #%s - %s [Por: %s] [Preco: %s] [Size: %s]",
                 isbn, color(title, UNDERLINE), color(author, YELLOW), priceStr, sizeInMbStr);
     }
 }

@@ -1,6 +1,5 @@
 package app;
 
-import model.Carrinho;
 import ui.LivrariaCLI;
 
 import java.io.ByteArrayInputStream;
@@ -14,8 +13,6 @@ import java.util.List;
 
 public class Application {
 
-    private static final boolean USE_ANSI = true;
-
     public static void main(String[] args) throws IOException {
         List<String> lines = Files.readAllLines(Paths.get("./data.txt")).stream()
                 .map(line -> line.split(","))
@@ -24,8 +21,7 @@ public class Application {
         final byte[] data = String.join("\n", lines).getBytes(StandardCharsets.UTF_8);
         InputStream bookData = new ByteArrayInputStream(data);
         SequenceInputStream sequenceInputStream = new SequenceInputStream(bookData, System.in);
-
-        LivrariaCLI cli = new LivrariaCLI(sequenceInputStream, System.out, USE_ANSI, new Carrinho());
+        LivrariaCLI cli = new LivrariaCLI(sequenceInputStream, System.out);
         cli.repl();
         cli.close();
     }
