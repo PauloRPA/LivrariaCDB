@@ -9,7 +9,6 @@
     - [Windows Terminal](#windows-terminal)
     - [Git bash](#git-bash)
     - [Linux](#linux)
-- [Fontes](#fontes)
 
 <!--toc:end-->
 
